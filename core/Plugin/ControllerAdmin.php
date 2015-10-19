@@ -128,7 +128,7 @@ abstract class ControllerAdmin extends Controller
         if (!$notifyPhpIsEOL) {
             return;
         }
-        $dateDropSupport = Date::factory('2015-05-01')->getLocalized('%longMonth% %longYear%');
+        $dateDropSupport = Date::factory('2016-01-01')->getLocalized('%longMonth% %longYear%');
         $message = Piwik::translate('General_WarningPiwikWillStopSupportingPHPVersion', $dateDropSupport)
             . "\n "
             . Piwik::translate('General_WarningPhpVersionXIsTooOld', '5.3');
