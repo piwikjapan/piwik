@@ -204,9 +204,10 @@ class Manager
     private function updatePluginsConfig($pluginsToLoad)
     {
         $pluginsToLoad = $this->pluginList->sortPlugins($pluginsToLoad);
-        $section = PiwikConfig::getInstance()->Plugins;
+        $config  = $this->getPiwikConfig();
+        $section = $config->Plugins;
         $section['Plugins'] = $pluginsToLoad;
-        PiwikConfig::getInstance()->Plugins = $section;
+        $config->Plugins = $section;
     }
 
     /**
@@ -216,15 +217,62 @@ class Manager
      */
     private function updatePluginsInstalledConfig($plugins)
     {
-        $section = PiwikConfig::getInstance()->PluginsInstalled;
+        $config  = $this->getPiwikConfig();
+        $section = $config->PluginsInstalled;
         $section['PluginsInstalled'] = $plugins;
-        PiwikConfig::getInstance()->PluginsInstalled = $section;
+        $config->PluginsInstalled = $section;
+    }
+
+    private function addPluginToPluginInstallingConfig($pluginName)
+    {
+        $config  = $this->getPiwikConfig();
+        $section = $config->PluginsInstalling;
+
+        if (empty($section['PluginsInstalling'])) {
+            $section['PluginsInstalling'] = array();
+        }
+
+        $section['PluginsInstalling'][] = $pluginName;
+        $config->PluginsInstalling = $section;
+        $config->forceSave();
+    }
+
+    private function isPluginCurrentlyInstalling($pluginName)
+    {
+        $config  = $this->getPiwikConfig();
+        $section = $config->PluginsInstalling;
+
+        if (!empty($section['PluginsInstalling'])) {
+            $key = array_search($pluginName, $section['PluginsInstalling']);
+            return $key !== false;
+        }
+
+        return false;
+    }
+
+    private function removePluginFromPluginInstallingConfig($pluginName)
+    {
+        $config  = $this->getPiwikConfig();
+        $section = $config->PluginsInstalling;
+
+        if (!empty($section['PluginsInstalling'])) {
+            $key = array_search($pluginName, $section['PluginsInstalling']);
+            if ($key !== false) {
+                unset($section['PluginsInstalling'][$key]);
+                $config->PluginsInstalling = $section;
+            }
+        }
+    }
+
+    private function getPiwikConfig()
+    {
+        return PiwikConfig::getInstance();
     }
 
     public function clearPluginsInstalledConfig()
     {
         $this->updatePluginsInstalledConfig(array());
-        PiwikConfig::getInstance()->forceSave();
+        $this->getPiwikConfig()->forceSave();
     }
 
     /**
@@ -483,7 +531,7 @@ class Manager
         $this->pluginsToLoad[] = $pluginName;
 
         $this->updatePluginsConfig($this->pluginsToLoad);
-        PiwikConfig::getInstance()->forceSave();
+        $this->getPiwikConfig()->forceSave();
 
         $this->clearCache($pluginName);
 
@@ -770,9 +818,9 @@ class Manager
                 return array();
             }
 
-            $plugins = $this->getLoadedPlugins();
-            $enabled = array_combine($enabled, $enabled);
-            $plugins = array_intersect_key($plugins, $enabled);
+            $plugins   = $this->getLoadedPlugins();
+            $enabled   = array_combine($enabled, $enabled);
+            $plugins   = array_intersect_key($plugins, $enabled);
 
             $this->pluginsLoadedAndActivated = $plugins;
         }
@@ -1065,8 +1113,10 @@ class Manager
         // is the plugin already installed or is it the first time we activate it?
         $pluginsInstalled = $this->getInstalledPluginsName();
 
-        if (!$this->isPluginInstalled($pluginName)) {
+        if (!$this->isPluginInstalled($pluginName) && !$this->isPluginCurrentlyInstalling($pluginName)) {
+            $this->addPluginToPluginInstallingConfig($pluginName);
             $this->executePluginInstall($plugin);
+            $this->removePluginFromPluginInstallingConfig($pluginName);
             $pluginsInstalled[] = $pluginName;
             $this->updatePluginsInstalledConfig($pluginsInstalled);
             $updater = new Updater();
@@ -1075,12 +1125,16 @@ class Manager
         }
 
         if ($saveConfig) {
-            PiwikConfig::getInstance()->forceSave();
+            $this->getPiwikConfig()->forceSave();
         }
     }
 
     public function isTrackerPlugin(Plugin $plugin)
     {
+        if ($plugin->isTrackerPlugin()) {
+            return true;
+        }
+
         $dimensions = VisitDimension::getDimensions($plugin);
         if (!empty($dimensions)) {
             return true;
@@ -1104,10 +1158,6 @@ class Manager
 
         $dimensions = ConversionDimension::getDimensions($plugin);
         if (!empty($dimensions)) {
-            return true;
-        }
-
-        if ($plugin->isTrackerPlugin()) {
             return true;
         }
 
@@ -1209,7 +1259,7 @@ class Manager
     private function removePluginFromConfig($pluginName)
     {
         $this->removePluginFromPluginsConfig($pluginName);
-        PiwikConfig::getInstance()->forceSave();
+        $this->getPiwikConfig()->forceSave();
     }
 
     /**
