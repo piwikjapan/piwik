@@ -5002,6 +5002,7 @@ if (typeof Piwik !== 'object') {
                  */
                 setUserId: function (userId) {
                     if(!isDefined(userId) || !userId.length) {
+                        configUserId = visitorUUID = '';
                         return;
                     }
                     configUserId = userId;
