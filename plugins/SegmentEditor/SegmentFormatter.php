@@ -93,7 +93,7 @@ class SegmentFormatter
             $translation = Piwik::translate($this->matchesMetric[$operator]);
         }
 
-        return $translation;
+        return strtolower($translation);
     }
 
     private function getTranslationForBoolOperator($operator)

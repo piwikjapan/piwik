@@ -22,7 +22,6 @@ use Piwik\Metrics;
 use Piwik\Period;
 use Piwik\Period\Range;
 use Piwik\Piwik;
-use Piwik\Plugin\Dimension\VisitDimension;
 use Piwik\Plugins\API\DataTable\MergeDataTables;
 use Piwik\Plugins\CoreAdminHome\CustomLogo;
 use Piwik\Translation\Translator;
@@ -88,8 +87,9 @@ class API extends \Piwik\Plugin\API
      * are not visible in the UI and not present in the API meta data. These columns are
      * translated here.
      * @return array
+     * @deprecated since Piwik 2.15.1
      */
-    public static function getDefaultMetricTranslations()
+    public function getDefaultMetricTranslations()
     {
         return Metrics::getDefaultMetricTranslations();
     }
@@ -102,6 +102,8 @@ class API extends \Piwik\Plugin\API
      */
     public function getAvailableMeasurableTypes()
     {
+        Piwik::checkUserHasSomeViewAccess();
+
         $typeManager = new TypeManager();
         $types = $typeManager->getAllTypes();
 
@@ -120,13 +122,19 @@ class API extends \Piwik\Plugin\API
 
     public function getSegmentsMetadata($idSites = array(), $_hideImplementationData = true)
     {
-        $isAuthenticatedWithViewAccess = Piwik::isUserHasViewAccess($idSites) && !Piwik::isUserIsAnonymous();
+        if (empty($idSites)) {
+            Piwik::checkUserHasSomeViewAccess();
+        } else {
+            Piwik::checkUserHasViewAccess($idSites);
+        }
+
+        $isNotAnonymous = !Piwik::isUserIsAnonymous();
 
         $segments = array();
         foreach (Dimension::getAllDimensions() as $dimension) {
             foreach ($dimension->getSegments() as $segment) {
                 if ($segment->isRequiresAtLeastViewAccess()) {
-                    $segment->setPermission($isAuthenticatedWithViewAccess);
+                    $segment->setPermission($isNotAnonymous);
                 }
 
                 $segments[] = $segment->toArray();
@@ -250,6 +258,7 @@ class API extends \Piwik\Plugin\API
      *
      * @param bool $pathOnly If true, returns path relative to doc root. Otherwise, returns a URL.
      * @return string
+     * @deprecated since Piwik 2.15.1
      */
     public function getLogoUrl($pathOnly = false)
     {
@@ -262,6 +271,7 @@ class API extends \Piwik\Plugin\API
      *
      * @param bool $pathOnly If true, returns path relative to doc root. Otherwise, returns a URL.
      * @return string
+     * @deprecated since Piwik 2.15.1
      */
     public function getHeaderLogoUrl($pathOnly = false)
     {
@@ -300,6 +310,8 @@ class API extends \Piwik\Plugin\API
     public function getMetadata($idSite, $apiModule, $apiAction, $apiParameters = array(), $language = false,
                                 $period = false, $date = false, $hideMetricsDoc = false, $showSubtableReports = false)
     {
+        Piwik::checkUserHasViewAccess($idSite);
+
         if ($language) {
             /** @var Translator $translator */
             $translator = StaticContainer::get('Piwik\Translation\Translator');
@@ -325,6 +337,8 @@ class API extends \Piwik\Plugin\API
     public function getReportMetadata($idSites = '', $period = false, $date = false, $hideMetricsDoc = false,
                                       $showSubtableReports = false)
     {
+        Piwik::checkUserHasViewAccess($idSites);
+
         $reporter = new ProcessedReport();
         $metadata = $reporter->getReportMetadata($idSites, $period, $date, $hideMetricsDoc, $showSubtableReports);
         return $metadata;
@@ -335,6 +349,8 @@ class API extends \Piwik\Plugin\API
                                        $showTimer = true, $hideMetricsDoc = false, $idSubtable = false, $showRawMetrics = false,
                                        $format_metrics = null, $idDimension = false)
     {
+        Piwik::checkUserHasViewAccess($idSite);
+
         $reporter = new ProcessedReport();
         $processed = $reporter->getProcessedReport($idSite, $period, $date, $apiModule, $apiAction, $segment,
             $apiParameters, $idGoal, $language, $showTimer, $hideMetricsDoc, $idSubtable, $showRawMetrics, $format_metrics, $idDimension);
@@ -347,6 +363,8 @@ class API extends \Piwik\Plugin\API
      */
     public function get($idSite, $period, $date, $segment = false, $columns = false)
     {
+        Piwik::checkUserHasViewAccess($idSite);
+
         $columns = Piwik::getArrayFromApiParameter($columns);
 
         // build columns map for faster checks later on
@@ -432,6 +450,8 @@ class API extends \Piwik\Plugin\API
      */
     public function getRowEvolution($idSite, $period, $date, $apiModule, $apiAction, $label = false, $segment = false, $column = false, $language = false, $idGoal = false, $legendAppendMetric = true, $labelUseAbsoluteUrl = true, $idDimension = false)
     {
+        Piwik::checkUserHasViewAccess($idSite);
+
         $rowEvolution = new RowEvolution();
         return $rowEvolution->getRowEvolution($idSite, $period, $date, $apiModule, $apiAction, $label, $segment, $column,
             $language, $idGoal, $legendAppendMetric, $labelUseAbsoluteUrl, $idDimension);
