@@ -100,8 +100,8 @@ class SegmentFormatter
     {
         $translation = '';
 
-        if (!empty($operators[$operator])) {
-            $translation = Piwik::translate($operators[$operator]);
+        if (!empty($this->operators[$operator])) {
+            $translation = Piwik::translate($this->operators[$operator]);
         } elseif (!empty($operator)) {
             $translation = $operator;
         }
