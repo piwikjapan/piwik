@@ -73,7 +73,7 @@ class SegmentFormatter
 
             $readable .= $segment['name'] . ' ';
             $readable .= $this->getTranslationForComparison($operand, $segment['type']) . ' ';
-            $readable .= $operand[SegmentExpression::INDEX_OPERAND_VALUE] . ' ';
+            $readable .= '"' . $operand[SegmentExpression::INDEX_OPERAND_VALUE] . '" ';
             $readable .= $this->getTranslationForBoolOperator($operator) . ' ';
         }
 
