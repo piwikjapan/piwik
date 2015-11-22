@@ -30,7 +30,7 @@ DataTable_RowActions_Transitions.isPageTitleReport = function (module, action) {
     return module == 'Actions' && (action == 'getPageTitles' || action == 'getPageTitlesFollowingSiteSearch');
 };
 
-DataTable_RowActions_Transitions.isCustomDimensionReport = function (params) {
+DataTable_RowActions_Transitions.isActionCustomDimensionReport = function (params) {
     return params.module == 'CustomDimensions' && params.action == 'getCustomDimension' && params.scopeOfDimension && params.scopeOfDimension === 'action';
 };
 
@@ -44,7 +44,7 @@ DataTable_RowActions_Transitions.prototype.trigger = function (tr, e, subTableLa
         this.openPopover('url:' + link);
     } else if (DataTable_RowActions_Transitions.isPageTitleReport(module, action)) {
         DataTable_RowAction.prototype.trigger.apply(this, [tr, e, subTableLabel]);
-    } else if (DataTable_RowActions_Transitions.isCustomDimensionReport(this.dataTable.param)) {
+    } else if (DataTable_RowActions_Transitions.isActionCustomDimensionReport(this.dataTable.param)) {
 
         var label = this.getLabelFromTr(tr);
         if (label && label.substr(0, 1) === '@') {
@@ -121,7 +121,7 @@ DataTable_RowActions_Registry.register({
         return (
             DataTable_RowActions_Transitions.isPageUrlReport(dataTableParams.module, dataTableParams.action) ||
                 DataTable_RowActions_Transitions.isPageTitleReport(dataTableParams.module, dataTableParams.action) ||
-                DataTable_RowActions_Transitions.isCustomDimensionReport(dataTableParams)
+                DataTable_RowActions_Transitions.isActionCustomDimensionReport(dataTableParams)
             );
     },
 
@@ -133,6 +133,11 @@ DataTable_RowActions_Registry.register({
         if (DataTable_RowActions_Transitions.isPageUrlReport(dataTableParams.module, dataTableParams.action)
             && !tr.find('> td:first span.label').parent().is('a')) {
             // not on page url without link (i.e. "Page URL not defined")
+            return false;
+        }
+        if (DataTable_RowActions_Transitions.isActionCustomDimensionReport(dataTableParams)
+            && !tr.parents('table').first().hasClass('subDataTable')) {
+            // only show it in subtables of custom dimensions
             return false;
         }
         return true;

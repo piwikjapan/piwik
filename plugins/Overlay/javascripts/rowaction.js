@@ -21,7 +21,7 @@ DataTable_RowActions_Overlay.prototype.onClick = function (actionA, tr, e) {
 
         var segment, link;
 
-        if (DataTable_RowActions_Transitions.isCustomDimensionReport(this.dataTable.param)) {
+        if (DataTable_RowActions_Transitions.isActionCustomDimensionReport(this.dataTable.param)) {
 
             link = this.getLabelFromTr(tr);
             if (link && link.substr(0, 1) === '@') {
@@ -77,7 +77,7 @@ DataTable_RowActions_Registry.register({
             return false;
         }
 
-        if (DataTable_RowActions_Transitions.isCustomDimensionReport(dataTableParams)) {
+        if (DataTable_RowActions_Transitions.isActionCustomDimensionReport(dataTableParams)) {
             return true;
         }
 
