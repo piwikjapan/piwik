@@ -8,20 +8,13 @@
 
 namespace Piwik\Plugins\SegmentEditor\tests\Integration;
 
-use Piwik\Date;
-use Piwik\Piwik;
-use Piwik\Plugins\SegmentEditor\API;
-use Piwik\Plugins\SegmentEditor\Model;
 use Piwik\Plugins\SegmentEditor\SegmentList;
-use Piwik\Plugins\SitesManager\API as APISitesManager;
 use Piwik\Tests\Framework\Fixture;
 use Piwik\Tests\Framework\Mock\FakeAccess;
 use Piwik\Tests\Framework\TestCase\IntegrationTestCase;
 use Exception;
 
 /**
- * Class Plugins_SegmentEditorTest
- *
  * @group SegmentListTest
  * @group SegmentList
  * @group SegmentEditor

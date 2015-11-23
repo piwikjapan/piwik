@@ -8,9 +8,11 @@
  */
 namespace Piwik\Plugins\SegmentEditor;
 
+use Exception;
 use Piwik\Config;
 use Piwik\Db;
 use Piwik\Piwik;
+use Piwik\Segment;
 use Piwik\Segment\SegmentExpression;
 
 /**
@@ -36,8 +38,8 @@ class SegmentFormatter
         SegmentExpression::MATCH_NOT_EQUAL => 'General_OperationIsNot',
         SegmentExpression::MATCH_CONTAINS => 'General_OperationContains',
         SegmentExpression::MATCH_DOES_NOT_CONTAIN => 'General_OperationDoesNotContain',
-        '=^' => 'General_OperationStartsWith',
-        '=$' => 'General_OperationEndsWith'
+        SegmentExpression::MATCH_STARTS_WITH => 'General_OperationStartsWith',
+        SegmentExpression::MATCH_ENDS_WITH => 'General_OperationEndsWith'
     );
 
     private $operators = array(
@@ -64,18 +66,21 @@ class SegmentFormatter
         foreach ($expressions as $expression) {
             $operator = $expression[SegmentExpression::INDEX_BOOL_OPERATOR];
             $operand  = $expression[SegmentExpression::INDEX_OPERAND];
+            $name     = $operand[SegmentExpression::INDEX_OPERAND_NAME];
 
-            $segment = $this->segmentList->findSegment($operand[SegmentExpression::INDEX_OPERAND_NAME], $idSite);
+            $segment = $this->segmentList->findSegment($name, $idSite);
 
             if (empty($segment)) {
-                continue;
+                throw new Exception(sprintf("The segment '%s' does not exist.", $name));
             }
 
             $readable .= $segment['name'] . ' ';
             $readable .= $this->getTranslationForComparison($operand, $segment['type']) . ' ';
-            $readable .= '"' . $operand[SegmentExpression::INDEX_OPERAND_VALUE] . '" ';
+            $readable .= $this->getFormattedValue($operand);
             $readable .= $this->getTranslationForBoolOperator($operator) . ' ';
         }
+
+        $readable = trim($readable);
 
         return $readable;
     }
@@ -86,6 +91,14 @@ class SegmentFormatter
 
         $translation = $operator;
 
+        if ($operator === SegmentExpression::MATCH_IS_NULL_OR_EMPTY) {
+            return Piwik::translate('SegmentEditor_SegmentOperatorIsNullOrEmpty');
+        }
+
+        if ($operator === SegmentExpression::MATCH_IS_NOT_NULL_NOR_EMPTY) {
+            return Piwik::translate('SegmentEditor_SegmentOperatorIsNotNullNOrEmpty');
+        }
+
         if ($segmentType === 'dimension' && !empty($this->matchesDimension[$operator])) {
             $translation = Piwik::translate($this->matchesDimension[$operator]);
         }
@@ -94,6 +107,24 @@ class SegmentFormatter
         }
 
         return strtolower($translation);
+    }
+
+    private function getFormattedValue($operand)
+    {
+        $operator = $operand[SegmentExpression::INDEX_OPERAND_OPERATOR];
+
+        if ($operator === SegmentExpression::MATCH_IS_NULL_OR_EMPTY
+            || $operator === SegmentExpression::MATCH_IS_NOT_NULL_NOR_EMPTY) {
+            return '';
+        }
+
+        $value = $operand[SegmentExpression::INDEX_OPERAND_VALUE];
+
+        if (empty($value)) {
+            $value = '';
+        }
+
+        return '"' . $value . '" ';
     }
 
     private function getTranslationForBoolOperator($operator)
