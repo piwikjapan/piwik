@@ -2691,7 +2691,7 @@ if (typeof Piwik !== 'object') {
                     segment = match[4];
 
                 if (!segment) {
-                    segment = ''
+                    segment = '';
                 } else if (segment.indexOf('&segment=') === 0) {
                     segment = segment.substr('&segment='.length);
                 }
